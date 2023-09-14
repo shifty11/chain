@@ -5,6 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/depinject"
+
+	modulev1 "github.com/KYVENetwork/chain/pulsar/kyve/global/module/v1"
+	"github.com/KYVENetwork/chain/util"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -14,16 +23,10 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	// Auth
-	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	// Bank
-	bankKeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	// Global
 	"github.com/KYVENetwork/chain/x/global/client/cli"
 	"github.com/KYVENetwork/chain/x/global/keeper"
 	"github.com/KYVENetwork/chain/x/global/types"
-	// Upgrade
-	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 )
 
 var (
@@ -96,18 +99,18 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	ak     authKeeper.AccountKeeper
-	bk     bankKeeper.Keeper
+	ak     util.AccountKeeper
+	bk     types.BankKeeper
 	keeper keeper.Keeper
-	uk     upgradeKeeper.Keeper
+	uk     util.UpgradeKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
-	ak authKeeper.AccountKeeper,
-	bk bankKeeper.Keeper,
+	ak util.AccountKeeper,
+	bk types.BankKeeper,
 	keeper keeper.Keeper,
-	uk upgradeKeeper.Keeper,
+	uk util.UpgradeKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -118,8 +121,11 @@ func NewAppModule(
 	}
 }
 
-// Deprecated: use RegisterServices
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
@@ -158,4 +164,46 @@ func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Val
 	EndBlocker(ctx, am.ak, am.bk, am.keeper, am.uk)
 
 	return []abci.ValidatorUpdate{}
+}
+
+// App Wiring Setup
+func init() {
+	appmodule.Register(&modulev1.Module{},
+		appmodule.Provide(ProvideModule),
+	)
+}
+
+type GlobalInputs struct {
+	depinject.In
+
+	Config *modulev1.Module
+	Cdc    codec.Codec
+	Key    *storeTypes.KVStoreKey
+
+	AccountKeeper util.AccountKeeper
+	BankKeeper    types.BankKeeper
+	UpgradeKeeper util.UpgradeKeeper
+}
+
+type GlobalOutputs struct {
+	depinject.Out
+
+	GlobalKeeper *keeper.Keeper
+	Module       appmodule.AppModule
+}
+
+func ProvideModule(in GlobalInputs) GlobalOutputs {
+	authority := authTypes.NewModuleAddress(govTypes.ModuleName)
+	if in.Config.Authority != "" {
+		authority = authTypes.NewModuleAddressOrBech32Address(in.Config.Authority)
+	}
+
+	globalKeeper := keeper.NewKeeper(
+		in.Cdc,
+		in.Key,
+		authority.String(),
+	)
+	m := NewAppModule(in.Cdc, in.AccountKeeper, in.BankKeeper, *globalKeeper, in.UpgradeKeeper)
+
+	return GlobalOutputs{GlobalKeeper: globalKeeper, Module: m}
 }

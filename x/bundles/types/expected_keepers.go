@@ -4,29 +4,7 @@ import (
 	delegationTypes "github.com/KYVENetwork/chain/x/delegation/types"
 	pooltypes "github.com/KYVENetwork/chain/x/pool/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
-
-// AccountKeeper defines the expected account keeper used for simulations (noalias)
-type AccountKeeper interface {
-	GetModuleAddress(moduleName string) sdk.AccAddress
-}
-
-type DistrKeeper interface {
-	FundCommunityPool(ctx sdk.Context, amount sdk.Coins, sender sdk.AccAddress) error
-}
-
-// BankKeeper defines the expected interface needed to retrieve account balances.
-type BankKeeper interface {
-	SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
-	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
-	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
-}
-
-type UpgradeKeeper interface {
-	ScheduleUpgrade(ctx sdk.Context, plan types.Plan) error
-}
 
 type PoolKeeper interface {
 	AssertPoolExists(ctx sdk.Context, poolId uint64) error
@@ -36,11 +14,12 @@ type PoolKeeper interface {
 	IncrementBundleInformation(ctx sdk.Context, poolId uint64, currentHeight uint64, currentKey string, currentValue string)
 
 	GetAllPools(ctx sdk.Context) (list []pooltypes.Pool)
+	GetProtocolInflationShare(ctx sdk.Context) (res sdk.Dec)
 	ChargeFundersOfPool(ctx sdk.Context, poolId uint64, amount uint64) (payout uint64, err error)
 	ChargeInflationPool(ctx sdk.Context, poolId uint64) (payout uint64, err error)
 }
 
-type StakerKeeper interface {
+type StakersKeeper interface {
 	GetAllStakerAddressesOfPool(ctx sdk.Context, poolId uint64) (stakers []string)
 	GetCommission(ctx sdk.Context, stakerAddress string) sdk.Dec
 	IncreaseStakerCommissionRewards(ctx sdk.Context, address string, amount uint64) error
@@ -60,4 +39,8 @@ type DelegationKeeper interface {
 	GetDelegationOfPool(ctx sdk.Context, poolId uint64) uint64
 	PayoutRewards(ctx sdk.Context, staker string, amount uint64, payerModuleName string) error
 	SlashDelegators(ctx sdk.Context, poolId uint64, staker string, slashType delegationTypes.SlashType)
+}
+
+type TeamKeeper interface {
+	GetTeamBlockProvision(ctx sdk.Context) int64
 }

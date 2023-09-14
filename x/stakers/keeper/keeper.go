@@ -3,7 +3,7 @@ package keeper
 import (
 	"fmt"
 
-	delegationKeeper "github.com/KYVENetwork/chain/x/delegation/keeper"
+	"github.com/KYVENetwork/chain/util"
 	"github.com/cometbft/cometbft/libs/log"
 
 	"github.com/KYVENetwork/chain/x/stakers/types"
@@ -20,12 +20,12 @@ type (
 
 		authority string
 
-		accountKeeper    types.AccountKeeper
-		bankKeeper       types.BankKeeper
-		distrkeeper      types.DistrKeeper
+		accountKeeper    util.AccountKeeper
+		bankKeeper       util.BankKeeper
+		distrkeeper      util.DistributionKeeper
 		poolKeeper       types.PoolKeeper
 		upgradeKeeper    types.UpgradeKeeper
-		delegationKeeper delegationKeeper.Keeper
+		delegationKeeper types.DelegationKeeper
 	}
 )
 
@@ -36,11 +36,12 @@ func NewKeeper(
 
 	authority string,
 
-	accountKeeper types.AccountKeeper,
-	bankKeeper types.BankKeeper,
-	distrkeeper types.DistrKeeper,
+	accountKeeper util.AccountKeeper,
+	bankKeeper util.BankKeeper,
+	distrkeeper util.DistributionKeeper,
 	poolKeeper types.PoolKeeper,
 	upgradeKeeper types.UpgradeKeeper,
+	delegationKeeper types.DelegationKeeper,
 ) *Keeper {
 	return &Keeper{
 		cdc:      cdc,
@@ -49,16 +50,13 @@ func NewKeeper(
 
 		authority: authority,
 
-		accountKeeper: accountKeeper,
-		bankKeeper:    bankKeeper,
-		distrkeeper:   distrkeeper,
-		poolKeeper:    poolKeeper,
-		upgradeKeeper: upgradeKeeper,
+		accountKeeper:    accountKeeper,
+		bankKeeper:       bankKeeper,
+		distrkeeper:      distrkeeper,
+		poolKeeper:       poolKeeper,
+		upgradeKeeper:    upgradeKeeper,
+		delegationKeeper: delegationKeeper,
 	}
-}
-
-func SetDelegationKeeper(k *Keeper, delegationKeeper delegationKeeper.Keeper) {
-	k.delegationKeeper = delegationKeeper
 }
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {

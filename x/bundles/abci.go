@@ -3,23 +3,14 @@ package bundles
 import (
 	"github.com/KYVENetwork/chain/util"
 	bundlesKeeper "github.com/KYVENetwork/chain/x/bundles/keeper"
+	"github.com/KYVENetwork/chain/x/bundles/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	// Auth
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	// Bank
-	bankKeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	// Mint
-	mintKeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
-	// Pool
-	"github.com/KYVENetwork/chain/x/pool/keeper"
-	// Team
-	teamKeeper "github.com/KYVENetwork/chain/x/team/keeper"
-	// Upgrade
-	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 )
 
-func SplitInflation(ctx sdk.Context, k bundlesKeeper.Keeper, bk bankKeeper.Keeper, mk mintKeeper.Keeper, pk keeper.Keeper, tk teamKeeper.Keeper, uk upgradeKeeper.Keeper) {
+func SplitInflation(ctx sdk.Context, k bundlesKeeper.Keeper, bk util.BankKeeper, mk util.MintKeeper, pk types.PoolKeeper, tk types.TeamKeeper, uk util.UpgradeKeeper) {
 	minter := mk.GetMinter(ctx)
 	params := mk.GetParams(ctx)
 
@@ -86,5 +77,5 @@ func SplitInflation(ctx sdk.Context, k bundlesKeeper.Keeper, bk bankKeeper.Keepe
 	}
 
 	// rest gets transferred to chain
-	pk.Logger(ctx).Info("split portion of minted coins to protocol", "amount", protocolBlockProvision)
+	ctx.Logger().Info("split portion of minted coins to protocol", "amount", protocolBlockProvision)
 }

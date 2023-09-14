@@ -5,26 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/depinject"
+
+	modulev1 "github.com/KYVENetwork/chain/pulsar/kyve/pool/module/v1"
+	"github.com/KYVENetwork/chain/util"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 
-	// Bank
-	bankKeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-
 	// Pool
 	"github.com/KYVENetwork/chain/x/pool/client/cli"
 	"github.com/KYVENetwork/chain/x/pool/keeper"
 	"github.com/KYVENetwork/chain/x/pool/types"
-
-	// Upgrade
-	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 )
 
 var (
@@ -99,16 +101,16 @@ type AppModule struct {
 
 	keeper        keeper.Keeper
 	accountKeeper types.AccountKeeper
-	bankKeeper    bankKeeper.Keeper
-	upgradeKeeper upgradeKeeper.Keeper
+	bankKeeper    util.BankKeeper
+	upgradeKeeper util.UpgradeKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
-	bankKeeper bankKeeper.Keeper,
-	upgradeKeeper upgradeKeeper.Keeper,
+	bankKeeper util.BankKeeper,
+	upgradeKeeper util.UpgradeKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -119,8 +121,11 @@ func NewAppModule(
 	}
 }
 
-// Deprecated: use RegisterServices
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
@@ -158,4 +163,55 @@ func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	am.keeper.HandlePoolUpgrades(ctx)
 	return []abci.ValidatorUpdate{}
+}
+
+// App Wiring Setup
+func init() {
+	appmodule.Register(&modulev1.Module{},
+		appmodule.Provide(ProvideModule),
+	)
+}
+
+type PoolInputs struct {
+	depinject.In
+
+	Config *modulev1.Module
+	Cdc    codec.Codec
+	Key    *storeTypes.KVStoreKey
+	MemKey *storeTypes.MemoryStoreKey
+
+	AccountKeeper      types.AccountKeeper
+	BankKeeper         util.BankKeeper
+	DistributionKeeper util.DistributionKeeper
+	UpgradeKeeper      util.UpgradeKeeper
+	MintKeeper         util.MintKeeper
+}
+
+type PoolOutputs struct {
+	depinject.Out
+
+	PoolKeeper *keeper.Keeper
+	Module     appmodule.AppModule
+}
+
+func ProvideModule(in PoolInputs) PoolOutputs {
+	authority := authTypes.NewModuleAddress(govTypes.ModuleName)
+	if in.Config.Authority != "" {
+		authority = authTypes.NewModuleAddressOrBech32Address(in.Config.Authority)
+	}
+
+	poolKeeper := keeper.NewKeeper(
+		in.Cdc,
+		in.Key,
+		in.MemKey,
+		authority.String(),
+		in.AccountKeeper,
+		in.BankKeeper,
+		in.DistributionKeeper,
+		in.MintKeeper,
+		in.UpgradeKeeper,
+	)
+	m := NewAppModule(in.Cdc, *poolKeeper, in.AccountKeeper, in.BankKeeper, in.UpgradeKeeper)
+
+	return PoolOutputs{PoolKeeper: poolKeeper, Module: m}
 }

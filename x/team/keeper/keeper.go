@@ -3,18 +3,13 @@ package keeper
 import (
 	"fmt"
 
-	mintKeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
-	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	"github.com/KYVENetwork/chain/util"
 
 	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	// Auth
-	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	// Bank
-	bankKeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	// Team
 	"github.com/KYVENetwork/chain/x/team/types"
 )
@@ -24,20 +19,20 @@ type (
 		cdc      codec.BinaryCodec
 		storeKey storeTypes.StoreKey
 
-		accountKeeper authKeeper.AccountKeeper
-		bankKeeper    bankKeeper.Keeper
-		mintKeeper    mintKeeper.Keeper
-		upgradeKeeper upgradeKeeper.Keeper
+		accountKeeper util.AccountKeeper
+		bankKeeper    util.BankKeeper
+		mintKeeper    util.MintKeeper
+		upgradeKeeper util.UpgradeKeeper
 	}
 )
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey storeTypes.StoreKey,
-	accountKeeper authKeeper.AccountKeeper,
-	bankKeeper bankKeeper.Keeper,
-	mintKeeper mintKeeper.Keeper,
-	upgradeKeeper upgradeKeeper.Keeper,
+	accountKeeper util.AccountKeeper,
+	bankKeeper util.BankKeeper,
+	mintKeeper util.MintKeeper,
+	upgradeKeeper util.UpgradeKeeper,
 ) *Keeper {
 	return &Keeper{
 		cdc:      cdc,

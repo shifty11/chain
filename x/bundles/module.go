@@ -5,20 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 
-	poolKeeper "github.com/KYVENetwork/chain/x/pool/keeper"
-	teamKeeper "github.com/KYVENetwork/chain/x/team/keeper"
-	bankKeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	distributionKeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
-	mintKeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
-	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/depinject"
 
-	// this line is used by starport scaffolding # 1
+	"github.com/KYVENetwork/chain/util"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 
+	modulev1 "github.com/KYVENetwork/chain/pulsar/kyve/bundles/module/v1"
 	"github.com/KYVENetwork/chain/x/bundles/client/cli"
 	"github.com/KYVENetwork/chain/x/bundles/keeper"
 	"github.com/KYVENetwork/chain/x/bundles/types"
@@ -27,6 +27,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	// this line is used by starport scaffolding # 1
 )
 
 var (
@@ -99,42 +100,39 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper             keeper.Keeper
-	accountKeeper      types.AccountKeeper
-	bankKeeper         bankKeeper.Keeper
-	distributionKeeper distributionKeeper.Keeper
-	mintKeeper         mintKeeper.Keeper
-	upgradeKeeper      upgradeKeeper.Keeper
-	poolKeeper         poolKeeper.Keeper
-	teamKeeper         teamKeeper.Keeper
+	keeper        keeper.Keeper
+	bankKeeper    util.BankKeeper
+	mintKeeper    util.MintKeeper
+	upgradeKeeper util.UpgradeKeeper
+	poolKeeper    types.PoolKeeper
+	teamKeeper    types.TeamKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
-	accountKeeper types.AccountKeeper,
-	bankKeeper bankKeeper.Keeper,
-	distributionKeeper distributionKeeper.Keeper,
-	mintKeeper mintKeeper.Keeper,
-	upgradeKeeper upgradeKeeper.Keeper,
-	poolKeeper poolKeeper.Keeper,
-	teamKeeper teamKeeper.Keeper,
+	bankKeeper util.BankKeeper,
+	mintKeeper util.MintKeeper,
+	upgradeKeeper util.UpgradeKeeper,
+	poolKeeper types.PoolKeeper,
+	teamKeeper types.TeamKeeper,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic:     NewAppModuleBasic(cdc),
-		keeper:             keeper,
-		accountKeeper:      accountKeeper,
-		bankKeeper:         bankKeeper,
-		distributionKeeper: distributionKeeper,
-		mintKeeper:         mintKeeper,
-		upgradeKeeper:      upgradeKeeper,
-		poolKeeper:         poolKeeper,
-		teamKeeper:         teamKeeper,
+		AppModuleBasic: NewAppModuleBasic(cdc),
+		keeper:         keeper,
+		bankKeeper:     bankKeeper,
+		mintKeeper:     mintKeeper,
+		upgradeKeeper:  upgradeKeeper,
+		poolKeeper:     poolKeeper,
+		teamKeeper:     teamKeeper,
 	}
 }
 
-// Deprecated: use RegisterServices
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
@@ -175,4 +173,60 @@ func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	am.keeper.HandleUploadTimeout(sdk.WrapSDKContext(ctx))
 	return []abci.ValidatorUpdate{}
+}
+
+// App Wiring Setup
+func init() {
+	appmodule.Register(&modulev1.Module{},
+		appmodule.Provide(ProvideModule),
+	)
+}
+
+type BundlesInputs struct {
+	depinject.In
+
+	Config *modulev1.Module
+	Cdc    codec.Codec
+	Key    *storeTypes.KVStoreKey
+	MemKey *storeTypes.MemoryStoreKey
+
+	AccountKeeper      util.AccountKeeper
+	BankKeeper         util.BankKeeper
+	DelegationKeeper   types.DelegationKeeper
+	DistributionKeeper util.DistributionKeeper
+	PoolKeeper         types.PoolKeeper
+	StakersKeeper      types.StakersKeeper
+	UpgradeKeeper      util.UpgradeKeeper
+	MintKeeper         util.MintKeeper
+	TeamKeeper         types.TeamKeeper
+}
+
+type BundlesOutpus struct {
+	depinject.Out
+
+	BundlesKeeper *keeper.Keeper
+	Module        appmodule.AppModule
+}
+
+func ProvideModule(in BundlesInputs) BundlesOutpus {
+	authority := authTypes.NewModuleAddress(govTypes.ModuleName)
+	if in.Config.Authority != "" {
+		authority = authTypes.NewModuleAddressOrBech32Address(in.Config.Authority)
+	}
+
+	bundlesKeeper := keeper.NewKeeper(
+		in.Cdc,
+		in.Key,
+		in.MemKey,
+		authority.String(),
+		in.AccountKeeper,
+		in.BankKeeper,
+		in.DistributionKeeper,
+		in.PoolKeeper,
+		in.StakersKeeper,
+		in.DelegationKeeper,
+	)
+	m := NewAppModule(in.Cdc, *bundlesKeeper, in.BankKeeper, in.MintKeeper, in.UpgradeKeeper, in.PoolKeeper, in.TeamKeeper)
+
+	return BundlesOutpus{BundlesKeeper: bundlesKeeper, Module: m}
 }

@@ -5,11 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/depinject"
+
+	"github.com/KYVENetwork/chain/util"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
+	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govTypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 
+	modulev1 "github.com/KYVENetwork/chain/pulsar/kyve/delegation/module/v1"
 	"github.com/KYVENetwork/chain/x/delegation/client/cli"
 	"github.com/KYVENetwork/chain/x/delegation/keeper"
 	"github.com/KYVENetwork/chain/x/delegation/types"
@@ -91,15 +100,15 @@ type AppModule struct {
 	AppModuleBasic
 
 	keeper        keeper.Keeper
-	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
+	accountKeeper util.AccountKeeper
+	bankKeeper    util.BankKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
-	accountKeeper types.AccountKeeper,
-	bankKeeper types.BankKeeper,
+	accountKeeper util.AccountKeeper,
+	bankKeeper util.BankKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -109,8 +118,11 @@ func NewAppModule(
 	}
 }
 
-// Deprecated: use RegisterServices
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
@@ -150,4 +162,70 @@ func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	am.keeper.ProcessDelegatorUnbondingQueue(ctx)
 	return []abci.ValidatorUpdate{}
+}
+
+// App Wiring Setup
+func init() {
+	appmodule.Register(&modulev1.Module{},
+		appmodule.Provide(ProvideModule),
+		appmodule.Invoke(InvokeSetStakersKeeper),
+	)
+}
+
+type DelegationInputs struct {
+	depinject.In
+
+	Config *modulev1.Module
+	Cdc    codec.Codec
+	Key    *storeTypes.KVStoreKey
+	MemKey *storeTypes.MemoryStoreKey
+
+	AccountKeeper      util.AccountKeeper
+	BankKeeper         util.BankKeeper
+	DistributionKeeper util.DistributionKeeper
+	PoolKeeper         types.PoolKeeper
+	UpgradeKeeper      util.UpgradeKeeper
+}
+
+type DelegationOutputs struct {
+	depinject.Out
+
+	DelegationKeeper *keeper.Keeper
+	Module           appmodule.AppModule
+}
+
+func ProvideModule(in DelegationInputs) DelegationOutputs {
+	authority := authTypes.NewModuleAddress(govTypes.ModuleName)
+	if in.Config.Authority != "" {
+		authority = authTypes.NewModuleAddressOrBech32Address(in.Config.Authority)
+	}
+
+	delegationKeeper := keeper.NewKeeper(
+		in.Cdc,
+		in.Key,
+		in.MemKey,
+		authority.String(),
+		in.AccountKeeper,
+		in.BankKeeper,
+		in.DistributionKeeper,
+		in.PoolKeeper,
+		in.UpgradeKeeper,
+	)
+	m := NewAppModule(in.Cdc, *delegationKeeper, in.AccountKeeper, in.BankKeeper)
+
+	return DelegationOutputs{DelegationKeeper: delegationKeeper, Module: m}
+}
+
+func InvokeSetStakersKeeper(
+	keeper *keeper.Keeper,
+	stakersKeeper types.StakersKeeper,
+) error {
+	if keeper == nil {
+		return fmt.Errorf("keeper is nil")
+	}
+	if stakersKeeper == nil {
+		return fmt.Errorf("stakers keeper is nil")
+	}
+	keeper.SetStakersnKeeper(stakersKeeper)
+	return nil
 }

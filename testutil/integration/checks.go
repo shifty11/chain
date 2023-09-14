@@ -155,7 +155,7 @@ func (suite *KeeperTestSuite) VerifyPoolQueries() {
 }
 
 func (suite *KeeperTestSuite) VerifyPoolGenesisImportExport() {
-	genState := pool.ExportGenesis(suite.Ctx(), suite.App().PoolKeeper)
+	genState := pool.ExportGenesis(suite.Ctx(), *suite.App().PoolKeeper)
 
 	// Delete all entries in Pool Store
 	store := suite.Ctx().KVStore(suite.App().PoolKeeper.StoreKey())
@@ -163,7 +163,7 @@ func (suite *KeeperTestSuite) VerifyPoolGenesisImportExport() {
 
 	err := genState.Validate()
 	Expect(err).To(BeNil())
-	pool.InitGenesis(suite.Ctx(), suite.App().PoolKeeper, *genState)
+	pool.InitGenesis(suite.Ctx(), *suite.App().PoolKeeper, *genState)
 }
 
 // =====================
@@ -240,7 +240,7 @@ func (suite *KeeperTestSuite) VerifyStakersQueries() {
 }
 
 func (suite *KeeperTestSuite) VerifyStakersGenesisImportExport() {
-	genState := stakers.ExportGenesis(suite.Ctx(), suite.App().StakersKeeper)
+	genState := stakers.ExportGenesis(suite.Ctx(), *suite.App().StakersKeeper)
 
 	// Delete all entries in Stakers Store
 	store := suite.Ctx().KVStore(suite.App().StakersKeeper.StoreKey())
@@ -258,7 +258,7 @@ func (suite *KeeperTestSuite) VerifyStakersGenesisImportExport() {
 
 	err := genState.Validate()
 	Expect(err).To(BeNil())
-	stakers.InitGenesis(suite.Ctx(), suite.App().StakersKeeper, *genState)
+	stakers.InitGenesis(suite.Ctx(), *suite.App().StakersKeeper, *genState)
 }
 
 // =====================
@@ -313,10 +313,10 @@ func (suite *KeeperTestSuite) VerifyBundlesQueries() {
 }
 
 func (suite *KeeperTestSuite) VerifyBundlesGenesisImportExport() {
-	genState := bundles.ExportGenesis(suite.Ctx(), suite.App().BundlesKeeper)
+	genState := bundles.ExportGenesis(suite.Ctx(), *suite.App().BundlesKeeper)
 	err := genState.Validate()
 	Expect(err).To(BeNil())
-	bundles.InitGenesis(suite.Ctx(), suite.App().BundlesKeeper, *genState)
+	bundles.InitGenesis(suite.Ctx(), *suite.App().BundlesKeeper, *genState)
 }
 
 // ========================
@@ -400,10 +400,10 @@ func (suite *KeeperTestSuite) VerifyDelegationModuleIntegrity() {
 }
 
 func (suite *KeeperTestSuite) VerifyDelegationGenesisImportExport() {
-	genState := delegation.ExportGenesis(suite.Ctx(), suite.App().DelegationKeeper)
+	genState := delegation.ExportGenesis(suite.Ctx(), *suite.App().DelegationKeeper)
 	err := genState.Validate()
 	Expect(err).To(BeNil())
-	delegation.InitGenesis(suite.Ctx(), suite.App().DelegationKeeper, *genState)
+	delegation.InitGenesis(suite.Ctx(), *suite.App().DelegationKeeper, *genState)
 }
 
 // =========================
@@ -411,7 +411,7 @@ func (suite *KeeperTestSuite) VerifyDelegationGenesisImportExport() {
 // =========================
 
 func (suite *KeeperTestSuite) VerifyTeamGenesisImportExport() {
-	genState := team.ExportGenesis(suite.Ctx(), suite.App().TeamKeeper)
+	genState := team.ExportGenesis(suite.Ctx(), *suite.App().TeamKeeper)
 
 	// Delete all entries in Stakers Store
 	store := suite.Ctx().KVStore(suite.App().TeamKeeper.StoreKey())
@@ -429,7 +429,7 @@ func (suite *KeeperTestSuite) VerifyTeamGenesisImportExport() {
 
 	err := genState.Validate()
 	Expect(err).To(BeNil())
-	team.InitGenesis(suite.Ctx(), suite.App().TeamKeeper, *genState)
+	team.InitGenesis(suite.Ctx(), *suite.App().TeamKeeper, *genState)
 }
 
 // ========================

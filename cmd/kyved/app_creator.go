@@ -23,7 +23,7 @@ func (ac appCreator) createApp(
 	traceStore io.Writer,
 	appOpts serverTypes.AppOptions,
 ) serverTypes.Application {
-	return kyveApp.NewKYVEApp(
+	return kyveApp.NewKyveApp(
 		logger, db, traceStore, true,
 		appOpts,
 		server.DefaultBaseappOptions(appOpts)...,
@@ -59,13 +59,13 @@ func (ac appCreator) exportApp(
 	appOpts = viperAppOpts
 
 	if height != -1 {
-		app = kyveApp.NewKYVEApp(logger, db, traceStore, false, appOpts)
+		app = kyveApp.NewKyveApp(logger, db, traceStore, false, appOpts)
 
 		if err := app.LoadHeight(height); err != nil {
 			return serverTypes.ExportedApp{}, err
 		}
 	} else {
-		app = kyveApp.NewKYVEApp(logger, db, traceStore, true, appOpts)
+		app = kyveApp.NewKyveApp(logger, db, traceStore, true, appOpts)
 	}
 
 	return app.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)

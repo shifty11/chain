@@ -3,12 +3,21 @@ package query
 import (
 	"context"
 	"encoding/json"
+
+	"cosmossdk.io/core/appmodule"
+	"cosmossdk.io/depinject"
+
+	"github.com/KYVENetwork/chain/util"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
+
 	// this line is used by starport scaffolding # 1
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+
+	modulev1 "github.com/KYVENetwork/chain/pulsar/kyve/query/module/v1"
 
 	"github.com/KYVENetwork/chain/x/query/client/cli"
 	"github.com/KYVENetwork/chain/x/query/keeper"
@@ -87,27 +96,24 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
-	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
+	keeper keeper.Keeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
-	accountKeeper types.AccountKeeper,
-	bankKeeper types.BankKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		keeper:         keeper,
-		accountKeeper:  accountKeeper,
-		bankKeeper:     bankKeeper,
 	}
 }
 
-// Deprecated: use RegisterServices
-func (AppModule) QuerierRoute() string { return types.RouterKey }
+// IsOnePerModuleType implements the depinject.OnePerModuleType interface.
+func (am AppModule) IsOnePerModuleType() {}
+
+// IsAppModule implements the appmodule.AppModule interface.
+func (am AppModule) IsAppModule() {}
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
@@ -142,3 +148,74 @@ func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
 func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
+
+// App Wiring Setup
+func init() {
+	appmodule.Register(&modulev1.Module{},
+		appmodule.Provide(ProvideModule),
+	)
+}
+
+type QueryInputs struct {
+	depinject.In
+
+	Config *modulev1.Module
+	Cdc    codec.Codec
+	Key    *storeTypes.KVStoreKey
+	MemKey *storeTypes.MemoryStoreKey
+
+	AccountKeeper      util.AccountKeeper
+	BankKeeper         util.BankKeeper
+	DelegationKeeper   types.DelegationKeeper
+	DistributionKeeper util.DistributionKeeper
+	GlobalKeeper       types.GlobalKeeper
+	GovKeeper          types.GovKeeper
+	PoolKeeper         types.PoolKeeper
+	StakersKeeper      types.StakersKeeper
+	UpgradeKeeper      util.UpgradeKeeper
+}
+
+type QueryOutputs struct {
+	depinject.Out
+
+	QueryKeeper *keeper.Keeper
+	Module      appmodule.AppModule
+}
+
+func ProvideModule(in QueryInputs) QueryOutputs {
+	queryKeeper := keeper.NewKeeper(
+		in.Cdc,
+		in.Key,
+		in.MemKey,
+		in.AccountKeeper,
+		in.BankKeeper,
+		in.DistributionKeeper,
+		in.PoolKeeper,
+		in.StakersKeeper,
+		in.DelegationKeeper,
+		in.GlobalKeeper,
+		in.GovKeeper,
+	)
+	m := NewAppModule(in.Cdc, *queryKeeper)
+
+	return QueryOutputs{QueryKeeper: queryKeeper, Module: m}
+}
+
+// TODO(rapha): cleanup
+//type SubspaceInputs struct {
+//	depinject.In
+//
+//	Key       depinject.ModuleKey
+//	Keeper    keeper.Keeper
+//	KeyTables map[string]paramtypes.KeyTable
+//}
+//
+//func ProvideSubspace(in SubspaceInputs) paramtypes.Subspace {
+//	moduleName := in.Key.Name()
+//	kt, exists := in.KeyTables[moduleName]
+//	if !exists {
+//		return in.Keeper.Subspace(moduleName)
+//	} else {
+//		return in.Keeper.Subspace(moduleName).WithKeyTable(kt)
+//	}
+//}

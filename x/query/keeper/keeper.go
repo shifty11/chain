@@ -3,17 +3,7 @@ package keeper
 import (
 	"fmt"
 
-	globalKeeper "github.com/KYVENetwork/chain/x/global/keeper"
-	teamKeeper "github.com/KYVENetwork/chain/x/team/keeper"
-	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
-
-	bundlekeeper "github.com/KYVENetwork/chain/x/bundles/keeper"
-	delegationkeeper "github.com/KYVENetwork/chain/x/delegation/keeper"
-	poolkeeper "github.com/KYVENetwork/chain/x/pool/keeper"
-	stakerskeeper "github.com/KYVENetwork/chain/x/stakers/keeper"
-	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
+	"github.com/KYVENetwork/chain/util"
 
 	"github.com/cometbft/cometbft/libs/log"
 
@@ -21,26 +11,24 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 type (
 	Keeper struct {
-		cdc        codec.BinaryCodec
-		storeKey   storetypes.StoreKey
-		memKey     storetypes.StoreKey
-		paramstore paramtypes.Subspace
+		cdc      codec.BinaryCodec
+		storeKey storetypes.StoreKey
+		memKey   storetypes.StoreKey
+		// paramstore paramtypes.Subspace	//TODO(rapha): what is ps for?
 
-		accountKeeper    authkeeper.AccountKeeper
-		bankKeeper       bankkeeper.Keeper
-		distrkeeper      distrkeeper.Keeper
-		poolKeeper       poolkeeper.Keeper
-		stakerKeeper     stakerskeeper.Keeper
-		delegationKeeper delegationkeeper.Keeper
-		bundleKeeper     bundlekeeper.Keeper
-		globalKeeper     globalKeeper.Keeper
-		govKeeper        govkeeper.Keeper
-		teamKeeper       teamKeeper.Keeper
+		accountKeeper    util.AccountKeeper
+		bankKeeper       util.BankKeeper
+		distrkeeper      util.DistributionKeeper
+		poolKeeper       types.PoolKeeper
+		stakerKeeper     types.StakersKeeper
+		delegationKeeper types.DelegationKeeper
+		bundleKeeper     types.BundlesKeeper // TODO: rename to bundlesKeeper
+		globalKeeper     types.GlobalKeeper
+		govKeeper        types.GovKeeper
 	}
 )
 
@@ -48,24 +36,23 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey,
 	memKey storetypes.StoreKey,
-	ps paramtypes.Subspace,
+	// ps paramtypes.Subspace,	//TODO(rapha): what is ps for?
 
-	accountKeeper authkeeper.AccountKeeper,
-	bankKeeper bankkeeper.Keeper,
-	distrkeeper distrkeeper.Keeper,
-	poolKeeper poolkeeper.Keeper,
-	stakerKeeper stakerskeeper.Keeper,
-	delegationKeeper delegationkeeper.Keeper,
-	bundleKeeper bundlekeeper.Keeper,
-	globalKeeper globalKeeper.Keeper,
-	govKeeper govkeeper.Keeper,
-	teamKeeper teamKeeper.Keeper,
+	accountKeeper util.AccountKeeper,
+	bankKeeper util.BankKeeper,
+	distrkeeper util.DistributionKeeper,
+	poolKeeper types.PoolKeeper,
+	stakerKeeper types.StakersKeeper,
+	delegationKeeper types.DelegationKeeper,
+	// bundleKeeper types.BundlesKeeper,
+	globalKeeper types.GlobalKeeper,
+	govKeeper types.GovKeeper,
 ) *Keeper {
 	return &Keeper{
-		cdc:        cdc,
-		storeKey:   storeKey,
-		memKey:     memKey,
-		paramstore: ps,
+		cdc:      cdc,
+		storeKey: storeKey,
+		memKey:   memKey,
+		// paramstore: ps,
 
 		accountKeeper:    accountKeeper,
 		bankKeeper:       bankKeeper,
@@ -73,10 +60,9 @@ func NewKeeper(
 		poolKeeper:       poolKeeper,
 		stakerKeeper:     stakerKeeper,
 		delegationKeeper: delegationKeeper,
-		bundleKeeper:     bundleKeeper,
-		globalKeeper:     globalKeeper,
-		govKeeper:        govKeeper,
-		teamKeeper:       teamKeeper,
+		// bundleKeeper:     bundleKeeper,
+		globalKeeper: globalKeeper,
+		govKeeper:    govKeeper,
 	}
 }
 

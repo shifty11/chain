@@ -2,13 +2,12 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-type AccountKeeper interface{}
-
-type UpgradeKeeper interface {
-	ScheduleUpgrade(ctx sdk.Context, plan upgradetypes.Plan) error
+type AccountKeeper interface {
+	GetAccount(sdk.Context, sdk.AccAddress) types.AccountI
+	SetAccount(sdk.Context, types.AccountI)
 }
 
 type StakersKeeper interface {

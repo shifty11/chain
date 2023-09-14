@@ -132,8 +132,8 @@ func Setup() *App {
 
 	setPrefixes("kyve")
 
-	// app := NewKYVEApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, DefaultNodeHome, 5, config, EmptyAppOptions{})
-	app := NewKYVEApp(log.NewNopLogger(), db, nil, true, EmptyAppOptions{}, baseapp.SetChainID("kyve-test"))
+	// app := NewKyveApp(log.NewNopLogger(), db, nil, true, map[int64]bool{}, DefaultNodeHome, 5, config, EmptyAppOptions{})
+	app := NewKyveApp(log.NewNopLogger(), db, nil, true, EmptyAppOptions{}, baseapp.SetChainID("kyve-test"))
 	// init chain must be called to stop deliverState from being nil
 
 	genesisState := DefaultGenesisWithValSet(app.AppCodec())

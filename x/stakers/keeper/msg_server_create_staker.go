@@ -3,9 +3,6 @@ package keeper
 import (
 	"context"
 
-	delegationKeeper "github.com/KYVENetwork/chain/x/delegation/keeper"
-	delegationTypes "github.com/KYVENetwork/chain/x/delegation/types"
-
 	"github.com/KYVENetwork/chain/x/stakers/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -33,12 +30,7 @@ func (k msgServer) CreateStaker(
 	})
 
 	// Perform initial self delegation
-	delegationMsgServer := delegationKeeper.NewMsgServerImpl(k.delegationKeeper)
-	if _, err := delegationMsgServer.Delegate(ctx, &delegationTypes.MsgDelegate{
-		Creator: msg.Creator,
-		Staker:  msg.Creator,
-		Amount:  msg.Amount,
-	}); err != nil {
+	if err := k.delegationKeeper.Delegate(ctx, msg.Creator, msg.Creator, msg.Amount); err != nil {
 		return nil, err
 	}
 

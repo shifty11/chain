@@ -3,24 +3,17 @@ package keeper
 import (
 	"fmt"
 
+	"github.com/KYVENetwork/chain/util"
+
 	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	// Auth
-	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	// Bank
-	bankKeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	// Distribution
-	distributionKeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
-	// Mint
-	mintKeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
+
 	// Pool
 	"github.com/KYVENetwork/chain/x/pool/types"
-	// Team
-	teamKeeper "github.com/KYVENetwork/chain/x/team/keeper"
 )
 
 type (
@@ -32,12 +25,11 @@ type (
 		authority string
 
 		stakersKeeper types.StakersKeeper
-		accountKeeper authKeeper.AccountKeeper
-		bankKeeper    bankKeeper.Keeper
-		distrkeeper   distributionKeeper.Keeper
-		mintKeeper    mintKeeper.Keeper
-		upgradeKeeper types.UpgradeKeeper
-		teamKeeper    teamKeeper.Keeper
+		accountKeeper types.AccountKeeper
+		bankKeeper    util.BankKeeper
+		distrkeeper   util.DistributionKeeper
+		mintKeeper    util.MintKeeper
+		upgradeKeeper util.UpgradeKeeper
 	}
 )
 
@@ -48,12 +40,11 @@ func NewKeeper(
 
 	authority string,
 
-	accountKeeper authKeeper.AccountKeeper,
-	bankKeeper bankKeeper.Keeper,
-	distrKeeper distributionKeeper.Keeper,
-	mintKeeper mintKeeper.Keeper,
-	upgradeKeeper types.UpgradeKeeper,
-	teamKeeper teamKeeper.Keeper,
+	accountKeeper types.AccountKeeper,
+	bankKeeper util.BankKeeper,
+	distrKeeper util.DistributionKeeper,
+	mintKeeper util.MintKeeper,
+	upgradeKeeper util.UpgradeKeeper,
 ) *Keeper {
 	return &Keeper{
 		cdc:      cdc,
@@ -67,7 +58,6 @@ func NewKeeper(
 		distrkeeper:   distrKeeper,
 		mintKeeper:    mintKeeper,
 		upgradeKeeper: upgradeKeeper,
-		teamKeeper:    teamKeeper,
 	}
 }
 
@@ -90,7 +80,7 @@ func (k Keeper) EnsurePoolAccount(ctx sdk.Context, id uint64) {
 	k.accountKeeper.SetAccount(ctx, account)
 }
 
-func SetStakersKeeper(k *Keeper, stakersKeeper types.StakersKeeper) {
+func (k *Keeper) SetStakersKeeper(stakersKeeper types.StakersKeeper) {
 	k.stakersKeeper = stakersKeeper
 }
 
