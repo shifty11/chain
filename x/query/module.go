@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/depinject"
@@ -153,6 +154,7 @@ func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.Valid
 func init() {
 	appmodule.Register(&modulev1.Module{},
 		appmodule.Provide(ProvideModule),
+		appmodule.Invoke(InvokeSetBundlesKeeper),
 	)
 }
 
@@ -199,6 +201,20 @@ func ProvideModule(in QueryInputs) QueryOutputs {
 	m := NewAppModule(in.Cdc, *queryKeeper)
 
 	return QueryOutputs{QueryKeeper: queryKeeper, Module: m}
+}
+
+func InvokeSetBundlesKeeper(
+	keeper *keeper.Keeper,
+	bundlesKeeper types.BundlesKeeper,
+) error {
+	if keeper == nil {
+		return fmt.Errorf("keeper is nil")
+	}
+	if bundlesKeeper == nil {
+		return fmt.Errorf("bundlesKeeper is nil")
+	}
+	keeper.SetBundlesKeeper(bundlesKeeper)
+	return nil
 }
 
 // TODO(rapha): cleanup

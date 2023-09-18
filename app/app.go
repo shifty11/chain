@@ -2,11 +2,11 @@ package app
 
 import (
 	_ "embed"
+	v1p4 "github.com/KYVENetwork/chain/app/upgrades/v1_4"
 	"io"
 	"os"
 	"path/filepath"
 
-	v1p4 "github.com/KYVENetwork/chain/app/upgrades/v1_4"
 	bundlesKeeper "github.com/KYVENetwork/chain/x/bundles/keeper"
 	delegationKeeper "github.com/KYVENetwork/chain/x/delegation/keeper"
 	globalKeeper "github.com/KYVENetwork/chain/x/global/keeper"
@@ -255,7 +255,7 @@ func NewKyveApp(
 	app.App = appBuilder.Build(logger, db, traceStore, baseAppOptions...)
 
 	// Register legacy modules
-	// app.registerIBCModules()
+	app.registerIBCModules()
 
 	// load state streaming if enabled
 	if _, _, err := streaming.LoadStreamingServices(app.App.BaseApp, appOpts, app.appCodec, logger, app.kvStoreKeys()); err != nil {
@@ -264,8 +264,6 @@ func NewKyveApp(
 	}
 
 	/****  Module Options ****/
-
-	// app.RegisterLegacyModules()
 
 	app.ModuleManager.RegisterInvariants(app.CrisisKeeper)
 
@@ -301,8 +299,8 @@ func NewKyveApp(
 	//		app.ModuleManager,
 	//		app.Configurator(),
 	//		app.AppCodec(),
-	//		app.ConsensusKeeper,
-	//		app.GlobalKeeper,
+	//		app.ConsensusParamsKeeper,
+	//		*app.GlobalKeeper,
 	//		*app.GovKeeper,
 	//		*app.IBCKeeper,
 	//		app.ParamsKeeper,

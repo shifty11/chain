@@ -44,7 +44,6 @@ func NewKeeper(
 	poolKeeper types.PoolKeeper,
 	stakerKeeper types.StakersKeeper,
 	delegationKeeper types.DelegationKeeper,
-	// bundleKeeper types.BundlesKeeper,
 	globalKeeper types.GlobalKeeper,
 	govKeeper types.GovKeeper,
 ) *Keeper {
@@ -60,10 +59,13 @@ func NewKeeper(
 		poolKeeper:       poolKeeper,
 		stakerKeeper:     stakerKeeper,
 		delegationKeeper: delegationKeeper,
-		// bundleKeeper:     bundleKeeper,
-		globalKeeper: globalKeeper,
-		govKeeper:    govKeeper,
+		globalKeeper:     globalKeeper,
+		govKeeper:        govKeeper,
 	}
+}
+
+func (k *Keeper) SetBundlesKeeper(bundlesKeeper types.BundlesKeeper) {
+	k.bundleKeeper = bundlesKeeper
 }
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
