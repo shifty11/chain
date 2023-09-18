@@ -26,7 +26,7 @@ type (
 		poolKeeper       types.PoolKeeper
 		stakerKeeper     types.StakersKeeper
 		delegationKeeper types.DelegationKeeper
-		bundleKeeper     types.BundlesKeeper // TODO: rename to bundlesKeeper
+		bundlesKeeper    types.BundlesKeeper
 		globalKeeper     types.GlobalKeeper
 		govKeeper        types.GovKeeper
 	}
@@ -65,7 +65,7 @@ func NewKeeper(
 }
 
 func (k *Keeper) SetBundlesKeeper(bundlesKeeper types.BundlesKeeper) {
-	k.bundleKeeper = bundlesKeeper
+	k.bundlesKeeper = bundlesKeeper
 }
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {

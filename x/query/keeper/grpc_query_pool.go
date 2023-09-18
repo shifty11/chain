@@ -50,7 +50,7 @@ func (k Keeper) Pool(c context.Context, req *types.QueryPoolRequest) (*types.Que
 }
 
 func (k Keeper) parsePoolResponse(ctx sdk.Context, pool *poolTypes.Pool) types.PoolResponse {
-	bundleProposal, _ := k.bundleKeeper.GetBundleProposal(ctx, pool.Id)
+	bundleProposal, _ := k.bundlesKeeper.GetBundleProposal(ctx, pool.Id)
 	stakers := k.stakerKeeper.GetAllStakerAddressesOfPool(ctx, pool.Id)
 
 	totalSelfDelegation := uint64(0)

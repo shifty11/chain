@@ -24,14 +24,14 @@ func (k Keeper) FinalizedBundlesQuery(c context.Context, req *types.QueryFinaliz
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, "index needs to be an unsigned integer")
 		}
-		bundle, found := k.bundleKeeper.GetFinalizedBundleByIndex(ctx, req.PoolId, index)
+		bundle, found := k.bundlesKeeper.GetFinalizedBundleByIndex(ctx, req.PoolId, index)
 		data := make([]types.FinalizedBundle, 0)
 		if found {
 			data = append(data, bundle)
 		}
 		return &types.QueryFinalizedBundlesResponse{FinalizedBundles: data, Pagination: nil}, nil
 	} else {
-		finalizedBundles, pageRes, err := k.bundleKeeper.GetPaginatedFinalizedBundleQuery(ctx, req.Pagination, req.PoolId)
+		finalizedBundles, pageRes, err := k.bundlesKeeper.GetPaginatedFinalizedBundleQuery(ctx, req.Pagination, req.PoolId)
 		return &types.QueryFinalizedBundlesResponse{FinalizedBundles: finalizedBundles, Pagination: pageRes}, err
 	}
 }
@@ -42,12 +42,12 @@ func (k Keeper) FinalizedBundleQuery(c context.Context, req *types.QueryFinalize
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	finalizedBundle, found := k.bundleKeeper.GetFinalizedBundle(ctx, req.PoolId, req.Id)
+	finalizedBundle, found := k.bundlesKeeper.GetFinalizedBundle(ctx, req.PoolId, req.Id)
 	if !found {
 		return nil, sdkerrors.ErrKeyNotFound
 	}
 
-	versionMap := k.bundleKeeper.GetBundleVersionMap(ctx).GetMap()
+	versionMap := k.bundlesKeeper.GetBundleVersionMap(ctx).GetMap()
 	response := bundlesKeeper.RawBundleToQueryBundle(finalizedBundle, versionMap)
 	return &response, nil
 }

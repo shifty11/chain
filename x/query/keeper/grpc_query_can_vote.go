@@ -17,14 +17,14 @@ func (k Keeper) CanVote(c context.Context, req *types.QueryCanVoteRequest) (*typ
 
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if err := k.bundleKeeper.AssertCanVote(ctx, req.PoolId, req.Staker, req.Voter, req.StorageId); err != nil {
+	if err := k.bundlesKeeper.AssertCanVote(ctx, req.PoolId, req.Staker, req.Voter, req.StorageId); err != nil {
 		return &types.QueryCanVoteResponse{
 			Possible: false,
 			Reason:   err.Error(),
 		}, nil
 	}
 
-	bundleProposal, _ := k.bundleKeeper.GetBundleProposal(ctx, req.PoolId)
+	bundleProposal, _ := k.bundlesKeeper.GetBundleProposal(ctx, req.PoolId)
 	hasVotedAbstain := util.ContainsString(bundleProposal.VotersAbstain, req.Staker)
 
 	if hasVotedAbstain {

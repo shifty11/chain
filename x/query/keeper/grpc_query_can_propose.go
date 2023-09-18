@@ -16,7 +16,7 @@ func (k Keeper) CanPropose(c context.Context, req *types.QueryCanProposeRequest)
 
 	ctx := sdk.UnwrapSDKContext(c)
 
-	if err := k.bundleKeeper.AssertCanPropose(ctx, req.PoolId, req.Staker, req.Proposer, req.FromIndex); err != nil {
+	if err := k.bundlesKeeper.AssertCanPropose(ctx, req.PoolId, req.Staker, req.Proposer, req.FromIndex); err != nil {
 		return &types.QueryCanProposeResponse{
 			Possible: false,
 			Reason:   err.Error(),

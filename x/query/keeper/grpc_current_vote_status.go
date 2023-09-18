@@ -22,7 +22,7 @@ func (k Keeper) CurrentVoteStatus(c context.Context, req *types.QueryCurrentVote
 		return nil, sdkErrors.ErrKeyNotFound
 	}
 
-	voteDistribution := k.bundleKeeper.GetVoteDistribution(ctx, req.PoolId)
+	voteDistribution := k.bundlesKeeper.GetVoteDistribution(ctx, req.PoolId)
 
 	return &types.QueryCurrentVoteStatusResponse{
 		Valid:   voteDistribution.Valid,

@@ -15,7 +15,7 @@ func (k Keeper) Params(goCtx context.Context, req *types.QueryParamsRequest) (*t
 	}
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	bp := k.bundleKeeper.GetParams(ctx)
+	bp := k.bundlesKeeper.GetParams(ctx)
 	dp := k.delegationKeeper.GetParams(ctx)
 	globalParams := k.globalKeeper.GetParams(ctx)
 	govParams := k.govKeeper.GetParams(ctx)
