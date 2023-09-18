@@ -226,6 +226,6 @@ func InvokeSetStakersKeeper(
 	if stakersKeeper == nil {
 		return fmt.Errorf("stakers keeper is nil")
 	}
-	keeper.SetStakersnKeeper(stakersKeeper)
+	keeper.SetStakersKeeper(stakersKeeper)
 	return nil
 }

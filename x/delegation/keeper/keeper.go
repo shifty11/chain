@@ -58,7 +58,7 @@ func NewKeeper(
 	}
 }
 
-func (k *Keeper) SetStakersnKeeper(stakersKeeper types.StakersKeeper) {
+func (k *Keeper) SetStakersKeeper(stakersKeeper types.StakersKeeper) {
 	k.stakersKeeper = stakersKeeper
 }
 
