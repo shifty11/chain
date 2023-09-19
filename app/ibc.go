@@ -145,14 +145,6 @@ func (app *App) registerIBCModules() {
 		panic(err)
 	}
 
-	// TODO: do we need this?
-	//cfg := app.Configurator()
-	//for _, m := range legacyModules {
-	//	if s, ok := m.(module.HasServices); ok {
-	//		s.RegisterServices(cfg)
-	//	}
-	//}
-
 	// register additional types
 	ibctm.AppModuleBasic{}.RegisterInterfaces(app.interfaceRegistry)
 	solomachine.AppModuleBasic{}.RegisterInterfaces(app.interfaceRegistry)
