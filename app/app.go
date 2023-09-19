@@ -253,6 +253,12 @@ func NewKyveApp(
 	// baseAppOptions = append(baseAppOptions, prepareOpt)
 
 	app.App = appBuilder.Build(logger, db, traceStore, baseAppOptions...)
+	// TODO(rapha): right now it is not properly working. Why? I don't really know if the depinject from cosmos-sdk is working properly.
+	// The problem is that appBuilder.Modules
+	// - app.ModuleManager.Modules["delegation"].keeper.stakersKeeper is nil
+	// - app.ModuleManager.Modules["query"].keeper.bundlesKeeper is nil
+	// This values should be set by the depinject 'Invoke' method. The invoke is called but the values are not set for the ModuleManager.
+	// However the keepers on the app itself are correctly set. This is most likely some pointer/reference issue.
 
 	// Register legacy modules
 	app.registerIBCModules()
