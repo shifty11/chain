@@ -216,22 +216,3 @@ func InvokeSetBundlesKeeper(
 	keeper.SetBundlesKeeper(bundlesKeeper)
 	return nil
 }
-
-// TODO(rapha): cleanup
-//type SubspaceInputs struct {
-//	depinject.In
-//
-//	Key       depinject.ModuleKey
-//	Keeper    keeper.Keeper
-//	KeyTables map[string]paramtypes.KeyTable
-//}
-//
-//func ProvideSubspace(in SubspaceInputs) paramtypes.Subspace {
-//	moduleName := in.Key.Name()
-//	kt, exists := in.KeyTables[moduleName]
-//	if !exists {
-//		return in.Keeper.Subspace(moduleName)
-//	} else {
-//		return in.Keeper.Subspace(moduleName).WithKeyTable(kt)
-//	}
-//}

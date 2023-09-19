@@ -16,22 +16,13 @@ type GovKeeper interface {
 	GetParams(sdk.Context) govTypes.Params
 }
 
-// TODO(rapha): do we need all of this methods?
 type BundlesKeeper interface {
 	AssertCanVote(sdk.Context, uint64, string, string, string) error
 	AssertCanPropose(sdk.Context, uint64, string, string, uint64) error
-	//GetBundleProposal(sdk.Context, uint64) (bundlesTypes.BundleProposal, bool)
 	GetBundleVersionMap(sdk.Context) bundlesTypes.BundleVersionMap
-	//GetFinalizedBundle(sdk.Context, uint64, uint64) (bundlesTypes.FinalizedBundle, bool)
-	//GetFinalizedBundleByHeight(sdk.Context, uint64, uint64) (FinalizedBundle, bool)
 	GetFinalizedBundleByIndex(sdk.Context, uint64, uint64) (FinalizedBundle, bool)
-	//GetPaginatedFinalizedBundleQuery(sdk.Context, *query.PageRequest, uint64) ([]FinalizedBundle, *query.PageResponse, error)
-	//GetParams(sdk.Context) bundlesTypes.Params
-	//GetVoteDistribution(sdk.Context, uint64) bundlesTypes.VoteDistribution
-
 	GetBundleProposal(sdk.Context, uint64) (bundlesTypes.BundleProposal, bool)
 	GetFinalizedBundle(sdk.Context, uint64, uint64) (bundlesTypes.FinalizedBundle, bool)
-	//GetFinalizedBundleByHeight(sdk.Context, uint64, uint64) (bundlesTypes.FinalizedBundle, bool)
 	GetPaginatedFinalizedBundleQuery(sdk.Context, *query.PageRequest, uint64) ([]FinalizedBundle, *query.PageResponse, error)
 	GetParams(sdk.Context) bundlesTypes.Params
 	GetVoteDistribution(sdk.Context, uint64) bundlesTypes.VoteDistribution
