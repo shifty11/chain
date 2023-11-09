@@ -46,20 +46,20 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 	initialBalanceStaker1 := uint64(0)
 	initialBalanceValaddress1 := uint64(0)
 
+	gov := s.App().GovKeeper.GetGovernanceAccount(s.Ctx()).GetAddress().String()
+
 	BeforeEach(func() {
 		// init new clean chain
 		s = i.NewCleanChain()
 
 		// create pool
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name: "PoolTest",
-			Protocol: &pooltypes.Protocol{
-				Version:     "0.0.0",
-				Binaries:    "{}",
-				LastUpgrade: uint64(s.Ctx().BlockTime().Unix()),
-			},
-			UpgradePlan: &pooltypes.UpgradePlan{},
-		})
+		msg := &pooltypes.MsgCreatePool{
+			Authority:      gov,
+			UploadInterval: 60,
+			MaxBundleSize:  100,
+			Binaries:       "{}",
+		}
+		s.RunTxPoolSuccess(msg)
 
 		// create staker
 		s.RunTxStakersSuccess(&stakerstypes.MsgCreateStaker{
@@ -68,10 +68,10 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		})
 
 		initialBalanceStaker0 = s.GetBalanceFromAddress(i.STAKER_0)
-		initialBalanceValaddress0 = s.GetBalanceFromAddress(i.VALADDRESS_0)
+		initialBalanceValaddress0 = s.GetBalanceFromAddress(i.VALADDRESS_0_A)
 
 		initialBalanceStaker1 = s.GetBalanceFromAddress(i.STAKER_1)
-		initialBalanceValaddress1 = s.GetBalanceFromAddress(i.VALADDRESS_1)
+		initialBalanceValaddress1 = s.GetBalanceFromAddress(i.VALADDRESS_1_A)
 	})
 
 	AfterEach(func() {
@@ -89,13 +89,13 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
 		// ASSERT
 		balanceAfterStaker0 := s.GetBalanceFromAddress(i.STAKER_0)
-		balanceAfterValaddress0 := s.GetBalanceFromAddress(i.VALADDRESS_0)
+		balanceAfterValaddress0 := s.GetBalanceFromAddress(i.VALADDRESS_0_A)
 
 		Expect(initialBalanceStaker0 - balanceAfterStaker0).To(Equal(100 * i.KYVE))
 		Expect(balanceAfterValaddress0 - initialBalanceValaddress0).To(Equal(100 * i.KYVE))
@@ -110,7 +110,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 
 		Expect(valaccount.Staker).To(Equal(i.STAKER_0))
 		Expect(valaccount.PoolId).To(BeZero())
-		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_0))
+		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_0_A))
 		Expect(valaccount.Points).To(BeZero())
 		Expect(valaccount.IsLeaving).To(BeFalse())
 
@@ -136,13 +136,13 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     0 * i.KYVE,
 		})
 
 		// ASSERT
 		balanceAfterStaker1 := s.GetBalanceFromAddress(i.STAKER_1)
-		balanceAfterValaddress1 := s.GetBalanceFromAddress(i.VALADDRESS_1)
+		balanceAfterValaddress1 := s.GetBalanceFromAddress(i.VALADDRESS_1_A)
 
 		Expect(initialBalanceStaker1).To(Equal(balanceAfterStaker1))
 		Expect(initialBalanceValaddress1).To(Equal(balanceAfterValaddress1))
@@ -157,7 +157,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 
 		Expect(valaccount.Staker).To(Equal(i.STAKER_1))
 		Expect(valaccount.PoolId).To(BeZero())
-		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_1))
+		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_1_A))
 		Expect(valaccount.Points).To(BeZero())
 		Expect(valaccount.IsLeaving).To(BeFalse())
 
@@ -174,22 +174,23 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 
 	It("Join disabled pool", func() {
 		// ARRANGE
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name: "DisabledPool",
-			Protocol: &pooltypes.Protocol{
-				Version:     "0.0.0",
-				Binaries:    "{}",
-				LastUpgrade: uint64(s.Ctx().BlockTime().Unix()),
-			},
-			UpgradePlan: &pooltypes.UpgradePlan{},
-			Disabled:    true,
-		})
+		msg := &pooltypes.MsgCreatePool{
+			Authority:      gov,
+			UploadInterval: 60,
+			MaxBundleSize:  100,
+			Binaries:       "{}",
+		}
+		s.RunTxPoolSuccess(msg)
+
+		pool, _ := s.App().PoolKeeper.GetPool(s.Ctx(), 1)
+		pool.Disabled = true
+		s.App().PoolKeeper.SetPool(s.Ctx(), pool)
 
 		// ACT
 		_, err := s.RunTx(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     1,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -197,7 +198,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 
 		// ASSERT
 		balanceAfterStaker0 := s.GetBalanceFromAddress(i.STAKER_0)
-		balanceAfterValaddress0 := s.GetBalanceFromAddress(i.VALADDRESS_0)
+		balanceAfterValaddress0 := s.GetBalanceFromAddress(i.VALADDRESS_0_A)
 
 		Expect(initialBalanceStaker0 - balanceAfterStaker0).To(Equal(0 * i.KYVE))
 		Expect(balanceAfterValaddress0 - initialBalanceValaddress0).To(Equal(0 * i.KYVE))
@@ -232,7 +233,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     0 * i.KYVE,
 		})
 
@@ -240,13 +241,13 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     0 * i.KYVE,
 		})
 
 		// ASSERT
 		balanceAfterStaker0 := s.GetBalanceFromAddress(i.STAKER_0)
-		balanceAfterValaddress0 := s.GetBalanceFromAddress(i.VALADDRESS_0)
+		balanceAfterValaddress0 := s.GetBalanceFromAddress(i.VALADDRESS_0_A)
 
 		Expect(initialBalanceStaker0 - balanceAfterStaker0).To(BeZero())
 		Expect(balanceAfterValaddress0 - initialBalanceValaddress0).To(BeZero())
@@ -261,7 +262,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 
 		Expect(valaccount.Staker).To(Equal(i.STAKER_0))
 		Expect(valaccount.PoolId).To(BeZero())
-		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_0))
+		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_0_A))
 		Expect(valaccount.Points).To(BeZero())
 		Expect(valaccount.IsLeaving).To(BeFalse())
 
@@ -281,7 +282,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -306,7 +307,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 
 		Expect(valaccount.Staker).To(Equal(i.STAKER_0))
 		Expect(valaccount.PoolId).To(BeZero())
-		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_0))
+		Expect(valaccount.Valaddress).To(Equal(i.VALADDRESS_0_A))
 		Expect(valaccount.Points).To(BeZero())
 		Expect(valaccount.IsLeaving).To(BeFalse())
 
@@ -327,7 +328,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -335,7 +336,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -365,7 +366,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -373,7 +374,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -388,25 +389,23 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name: "Test Pool2",
-			Protocol: &pooltypes.Protocol{
-				Version:     "0.0.0",
-				Binaries:    "{}",
-				LastUpgrade: uint64(s.Ctx().BlockTime().Unix()),
-			},
-			UpgradePlan: &pooltypes.UpgradePlan{},
-		})
+		msg := &pooltypes.MsgCreatePool{
+			Authority:      gov,
+			UploadInterval: 60,
+			MaxBundleSize:  100,
+			Binaries:       "{}",
+		}
+		s.RunTxPoolSuccess(msg)
 
 		// ACT
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     1,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -417,15 +416,13 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 
 	It("Try to join pool with a valaddress that is already used by another staker", func() {
 		// ARRANGE
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name: "Test Pool2",
-			Protocol: &pooltypes.Protocol{
-				Version:     "0.0.0",
-				Binaries:    "{}",
-				LastUpgrade: uint64(s.Ctx().BlockTime().Unix()),
-			},
-			UpgradePlan: &pooltypes.UpgradePlan{},
-		})
+		msg := &pooltypes.MsgCreatePool{
+			Authority:      gov,
+			UploadInterval: 60,
+			MaxBundleSize:  100,
+			Binaries:       "{}",
+		}
+		s.RunTxPoolSuccess(msg)
 
 		s.RunTxStakersSuccess(&stakerstypes.MsgCreateStaker{
 			Creator: i.STAKER_1,
@@ -435,7 +432,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     1,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -443,7 +440,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -457,7 +454,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -470,7 +467,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
@@ -484,25 +481,23 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     100 * i.KYVE,
 		})
 
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name: "Test Pool2",
-			Protocol: &pooltypes.Protocol{
-				Version:     "0.0.0",
-				Binaries:    "{}",
-				LastUpgrade: uint64(s.Ctx().BlockTime().Unix()),
-			},
-			UpgradePlan: &pooltypes.UpgradePlan{},
-		})
+		msg := &pooltypes.MsgCreatePool{
+			Authority:      gov,
+			UploadInterval: 60,
+			MaxBundleSize:  100,
+			Binaries:       "{}",
+		}
+		s.RunTxPoolSuccess(msg)
 
 		// ACT
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     1,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 		})
 
 		// ASSERT
@@ -629,7 +624,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     1,
 		})
 
@@ -658,7 +653,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     1,
 		})
 
@@ -674,7 +669,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     1,
 		})
 
@@ -703,7 +698,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     1,
 		})
 
@@ -720,7 +715,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     1 * i.KYVE,
 		})
 
@@ -755,7 +750,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     1,
 		})
 
@@ -772,7 +767,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     1,
 		})
 
@@ -801,7 +796,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     1,
 		})
 
@@ -818,7 +813,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     1 * i.KYVE,
 		})
 
@@ -853,7 +848,7 @@ var _ = Describe("msg_server_join_pool.go", Ordered, func() {
 		s.RunTxStakersError(&stakerstypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     0,
 		})
 

@@ -16,9 +16,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-
 	modulev1 "github.com/KYVENetwork/chain/pulsar/kyve/query/module/v1"
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/KYVENetwork/chain/x/query/client/cli"
 	"github.com/KYVENetwork/chain/x/query/keeper"
@@ -77,6 +76,7 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 	_ = types.RegisterQueryDelegationHandlerClient(context.Background(), mux, types.NewQueryDelegationClient(clientCtx))
 	_ = types.RegisterQueryBundlesHandlerClient(context.Background(), mux, types.NewQueryBundlesClient(clientCtx))
 	_ = types.RegisterQueryParamsHandlerClient(context.Background(), mux, types.NewQueryParamsClient(clientCtx))
+	_ = types.RegisterQueryFundersHandlerClient(context.Background(), mux, types.NewQueryFundersClient(clientCtx))
 }
 
 // GetTxCmd returns the root Tx command for the module. The subcommands of this root command are used by end-users to generate new transactions containing messages defined in the module
@@ -124,6 +124,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryDelegationServer(cfg.QueryServer(), am.keeper)
 	types.RegisterQueryBundlesServer(cfg.QueryServer(), am.keeper)
 	types.RegisterQueryParamsServer(cfg.QueryServer(), am.keeper)
+	types.RegisterQueryFundersServer(cfg.QueryServer(), am.keeper)
 }
 
 // RegisterInvariants registers the invariants of the module. If an invariant deviates from its predicted value, the InvariantRegistry triggers appropriate logic (most often the chain will be halted)
@@ -175,6 +176,7 @@ type QueryInputs struct {
 	PoolKeeper         types.PoolKeeper
 	StakersKeeper      types.StakersKeeper
 	UpgradeKeeper      util.UpgradeKeeper
+	FundersKeeper      types.FundersKeeper
 }
 
 type QueryOutputs struct {
@@ -197,6 +199,7 @@ func ProvideModule(in QueryInputs) QueryOutputs {
 		in.DelegationKeeper,
 		in.GlobalKeeper,
 		in.GovKeeper,
+		in.FundersKeeper,
 	)
 	m := NewAppModule(in.Cdc, *queryKeeper)
 

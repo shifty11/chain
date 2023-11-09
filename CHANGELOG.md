@@ -14,12 +14,16 @@
 
 An '!' indicates a state machine breaking change.
 
-## [v1.4.0](https://github.com/KYVENetwork/chain/releases/tag/v1.4.0) - 2023-09-12
+## [Unreleased]
+
+### Features
+
+- ! (`x/funders`) [#141](https://github.com/KYVENetwork/chain/pull/141) Implementation of the new [funders concept](https://commonwealth.im/kyve/discussion/13420-enhancing-kyves-funders-concept).
 
 ### Improvements
 
-- (deps) [#33](https://github.com/KYVENetwork/chain/pull/33) Upgrade Cosmos SDK to [v0.47.5](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.47.5) ([`v0.47.5-kyve`](https://github.com/KYVENetwork/cosmos-sdk/releases/tag/v0.47.5-kyve)).
-- [#35](https://github.com/KYVENetwork/chain/pull/35) Use [interchaintest](https://github.com/strangelove-ventures/interchaintest) to test chain upgrades. 
+- ! (`x/bundles`) [#142](https://github.com/KYVENetwork/chain/pull/142) Halt the pool if a single validator has more than 50% voting power.
+- (deps) [#33](https://github.com/KYVENetwork/chain/pull/33) Upgrade Cosmos SDK to [v0.47.5](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.47.5) ([`v0.47.5-kyve`](https://github.com/KYVENetwork/cosmos-sdk/releases/tag/v0.47.5-kyve-rc0)).
 
 ## [v1.3.1](https://github.com/KYVENetwork/chain/releases/tag/v1.3.1) - 2023-08-02
 

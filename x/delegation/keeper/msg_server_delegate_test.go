@@ -1,12 +1,12 @@
 package keeper_test
 
 import (
+	funderstypes "github.com/KYVENetwork/chain/x/funders/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	i "github.com/KYVENetwork/chain/testutil/integration"
 	"github.com/KYVENetwork/chain/x/delegation/types"
-	pooltypes "github.com/KYVENetwork/chain/x/pool/types"
 	stakerstypes "github.com/KYVENetwork/chain/x/stakers/types"
 )
 
@@ -21,7 +21,7 @@ TEST CASES - msg_server_delegate.go
 * Payout delegators
 * Don't pay out rewards twice
 * Delegate to validator with 0 $KYVE
-* TODO(@max): Delegate to multiple validators
+* Delegate to multiple validators
 
 */
 
@@ -156,9 +156,9 @@ var _ = Describe("msg_server_delegate.go", Ordered, func() {
 			Amount:  209 * i.KYVE,
 		})
 
-		poolModuleBalance := s.GetBalanceFromModule(pooltypes.ModuleName)
+		fundersModuleBalance := s.GetBalanceFromModule(funderstypes.ModuleName)
 
-		Expect(poolModuleBalance).To(Equal(100 * i.KYVE))
+		Expect(fundersModuleBalance).To(Equal(100 * i.KYVE))
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(BeZero())
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[1])).To(BeZero())
 
@@ -186,8 +186,8 @@ var _ = Describe("msg_server_delegate.go", Ordered, func() {
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(uint64(0)))
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[1])).To(Equal(uint64(5_110_024_449)))
 
-		Expect(s.GetBalanceFromAddress(i.DUMMY[0])).To(Equal(uint64(900*i.KYVE + 2_444_987_775)))
-		Expect(s.GetBalanceFromModule(pooltypes.ModuleName)).To(Equal(90 * i.KYVE))
+		Expect(s.GetBalanceFromAddress(i.DUMMY[0])).To(Equal(900*i.KYVE + 2_444_987_775))
+		Expect(s.GetBalanceFromModule(funderstypes.ModuleName)).To(Equal(90 * i.KYVE))
 		Expect(s.GetBalanceFromModule(types.ModuleName)).To(Equal((200+409)*i.KYVE + uint64(2_444_987_775+5_110_024_449+1)))
 	})
 
@@ -205,9 +205,9 @@ var _ = Describe("msg_server_delegate.go", Ordered, func() {
 			Amount:  200 * i.KYVE,
 		})
 
-		poolModuleBalance := s.GetBalanceFromModule(pooltypes.ModuleName)
+		fundersModuleBalance := s.GetBalanceFromModule(funderstypes.ModuleName)
 
-		Expect(poolModuleBalance).To(Equal(100 * i.KYVE))
+		Expect(fundersModuleBalance).To(Equal(100 * i.KYVE))
 
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(BeZero())
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[1])).To(BeZero())
@@ -238,8 +238,8 @@ var _ = Describe("msg_server_delegate.go", Ordered, func() {
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(uint64(0)))
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[1])).To(Equal(uint64(5_000_000_000)))
 
-		Expect(s.GetBalanceFromAddress(i.DUMMY[0])).To(Equal(uint64(900*i.KYVE + 2_500_000_000)))
-		Expect(s.GetBalanceFromModule(pooltypes.ModuleName)).To(Equal(90 * i.KYVE))
+		Expect(s.GetBalanceFromAddress(i.DUMMY[0])).To(Equal(900*i.KYVE + 2_500_000_000))
+		Expect(s.GetBalanceFromModule(funderstypes.ModuleName)).To(Equal(90 * i.KYVE))
 		Expect(s.GetBalanceFromModule(types.ModuleName)).To(Equal(600*i.KYVE + 7_500_000_000))
 	})
 
@@ -278,6 +278,16 @@ var _ = Describe("msg_server_delegate.go", Ordered, func() {
 		// ACT
 		s.RunTxDelegatorSuccess(&types.MsgDelegate{
 			Creator: i.DUMMY[1],
+			Staker:  i.ALICE,
+			Amount:  200 * i.KYVE,
+		})
+		s.RunTxDelegatorSuccess(&types.MsgDelegate{
+			Creator: i.DUMMY[1],
+			Staker:  i.BOB,
+			Amount:  200 * i.KYVE,
+		})
+		s.RunTxDelegatorSuccess(&types.MsgDelegate{
+			Creator: i.DUMMY[1],
 			Staker:  i.CHARLIE,
 			Amount:  200 * i.KYVE,
 		})
@@ -286,8 +296,14 @@ var _ = Describe("msg_server_delegate.go", Ordered, func() {
 		s.PerformValidityChecks()
 
 		poolModuleBalance := s.GetBalanceFromModule(types.ModuleName)
-		Expect(poolModuleBalance).To(Equal(200*i.KYVE + aliceSelfDelegation + bobSelfDelegation))
-		Expect(s.GetBalanceFromAddress(i.DUMMY[1])).To(Equal(800 * i.KYVE))
+		Expect(poolModuleBalance).To(Equal(600*i.KYVE + aliceSelfDelegation + bobSelfDelegation))
+		Expect(s.GetBalanceFromAddress(i.DUMMY[1])).To(Equal(400 * i.KYVE))
+
+		aliceDelegation := s.App().DelegationKeeper.GetDelegationAmount(s.Ctx(), i.ALICE)
+		Expect(aliceDelegation).To(Equal(200*i.KYVE + aliceSelfDelegation))
+
+		bobDelegation := s.App().DelegationKeeper.GetDelegationAmount(s.Ctx(), i.BOB)
+		Expect(bobDelegation).To(Equal(200*i.KYVE + bobSelfDelegation))
 
 		charlieDelegation := s.App().DelegationKeeper.GetDelegationAmount(s.Ctx(), i.CHARLIE)
 		Expect(charlieDelegation).To(Equal(200 * i.KYVE))

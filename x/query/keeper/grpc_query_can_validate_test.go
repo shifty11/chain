@@ -29,14 +29,17 @@ var _ = Describe("grpc_query_can_validate.go", Ordered, func() {
 	BeforeEach(func() {
 		s = i.NewCleanChain()
 
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name:           "PoolTest",
+		// create 2 pools
+		gov := s.App().GovKeeper.GetGovernanceAccount(s.Ctx()).GetAddress().String()
+		msg := &pooltypes.MsgCreatePool{
+			Authority:      gov,
 			MinDelegation:  200 * i.KYVE,
 			UploadInterval: 60,
 			MaxBundleSize:  100,
-			Protocol:       &pooltypes.Protocol{},
-			UpgradePlan:    &pooltypes.UpgradePlan{},
-		})
+			Binaries:       "{}",
+		}
+		s.RunTxPoolSuccess(msg)
+		s.RunTxPoolSuccess(msg)
 
 		s.RunTxStakersSuccess(&stakertypes.MsgCreateStaker{
 			Creator: i.STAKER_0,
@@ -46,17 +49,8 @@ var _ = Describe("grpc_query_can_validate.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakertypes.MsgJoinPool{
 			Creator:    i.STAKER_0,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     0,
-		})
-
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name:           "Test Pool2",
-			MinDelegation:  200 * i.KYVE,
-			UploadInterval: 60,
-			MaxBundleSize:  100,
-			Protocol:       &pooltypes.Protocol{},
-			UpgradePlan:    &pooltypes.UpgradePlan{},
 		})
 
 		s.RunTxStakersSuccess(&stakertypes.MsgCreateStaker{
@@ -67,7 +61,7 @@ var _ = Describe("grpc_query_can_validate.go", Ordered, func() {
 		s.RunTxStakersSuccess(&stakertypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     1,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     0,
 		})
 	})
@@ -80,7 +74,7 @@ var _ = Describe("grpc_query_can_validate.go", Ordered, func() {
 		// ACT
 		canValidate, err := s.App().QueryKeeper.CanValidate(sdk.WrapSDKContext(s.Ctx()), &querytypes.QueryCanValidateRequest{
 			PoolId:     2,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 		})
 
 		// ASSERT
@@ -94,7 +88,7 @@ var _ = Describe("grpc_query_can_validate.go", Ordered, func() {
 		// ACT
 		canValidate, err := s.App().QueryKeeper.CanValidate(sdk.WrapSDKContext(s.Ctx()), &querytypes.QueryCanValidateRequest{
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_2,
+			Valaddress: i.VALADDRESS_2_A,
 		})
 
 		// ASSERT
@@ -108,7 +102,7 @@ var _ = Describe("grpc_query_can_validate.go", Ordered, func() {
 		// ACT
 		canValidate, err := s.App().QueryKeeper.CanValidate(sdk.WrapSDKContext(s.Ctx()), &querytypes.QueryCanValidateRequest{
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 		})
 
 		// ASSERT
@@ -122,7 +116,7 @@ var _ = Describe("grpc_query_can_validate.go", Ordered, func() {
 		// ACT
 		canValidate, err := s.App().QueryKeeper.CanValidate(sdk.WrapSDKContext(s.Ctx()), &querytypes.QueryCanValidateRequest{
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 		})
 
 		// ASSERT

@@ -4,10 +4,8 @@ import (
 	"fmt"
 
 	"github.com/KYVENetwork/chain/util"
-
-	"github.com/cometbft/cometbft/libs/log"
-
 	"github.com/KYVENetwork/chain/x/query/types"
+	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,7 +16,6 @@ type (
 		cdc      codec.BinaryCodec
 		storeKey storetypes.StoreKey
 		memKey   storetypes.StoreKey
-		// paramstore paramtypes.Subspace	//TODO(rapha): what is ps for?
 
 		accountKeeper    util.AccountKeeper
 		bankKeeper       util.BankKeeper
@@ -29,6 +26,7 @@ type (
 		bundlesKeeper    types.BundlesKeeper
 		globalKeeper     types.GlobalKeeper
 		govKeeper        types.GovKeeper
+		fundersKeeper    types.FundersKeeper
 	}
 )
 
@@ -36,7 +34,6 @@ func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey,
 	memKey storetypes.StoreKey,
-	// ps paramtypes.Subspace,	//TODO(rapha): what is ps for?
 
 	accountKeeper util.AccountKeeper,
 	bankKeeper util.BankKeeper,
@@ -46,12 +43,12 @@ func NewKeeper(
 	delegationKeeper types.DelegationKeeper,
 	globalKeeper types.GlobalKeeper,
 	govKeeper types.GovKeeper,
+	fundersKeeper types.FundersKeeper,
 ) *Keeper {
 	return &Keeper{
 		cdc:      cdc,
 		storeKey: storeKey,
 		memKey:   memKey,
-		// paramstore: ps,
 
 		accountKeeper:    accountKeeper,
 		bankKeeper:       bankKeeper,
@@ -61,6 +58,7 @@ func NewKeeper(
 		delegationKeeper: delegationKeeper,
 		globalKeeper:     globalKeeper,
 		govKeeper:        govKeeper,
+		fundersKeeper:    fundersKeeper,
 	}
 }
 

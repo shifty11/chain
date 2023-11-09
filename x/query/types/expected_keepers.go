@@ -3,6 +3,7 @@ package types
 import (
 	bundlesTypes "github.com/KYVENetwork/chain/x/bundles/types"
 	delegationTypes "github.com/KYVENetwork/chain/x/delegation/types"
+	fundersTypes "github.com/KYVENetwork/chain/x/funders/types"
 	globalTypes "github.com/KYVENetwork/chain/x/global/types"
 	poolTypes "github.com/KYVENetwork/chain/x/pool/types"
 	stakersTypes "github.com/KYVENetwork/chain/x/stakers/types"
@@ -43,6 +44,7 @@ type DelegationKeeper interface {
 	GetAllUnbondingDelegationQueueEntriesOfDelegator(sdk.Context, string) []delegationTypes.UndelegationQueueEntry
 	GetDelegationData(sdk.Context, string) (delegationTypes.DelegationData, bool)
 	GetUndelegationQueueEntry(sdk.Context, uint64) (delegationTypes.UndelegationQueueEntry, bool)
+	GetTotalAndHighestDelegationOfPool(sdk.Context, uint64) (uint64, uint64)
 	GetParams(sdk.Context) delegationTypes.Params
 	StoreKey() storeTypes.StoreKey
 }
@@ -66,4 +68,19 @@ type StakersKeeper interface {
 	GetParams(sdk.Context) stakersTypes.Params
 	GetStaker(sdk.Context, string) (stakersTypes.Staker, bool)
 	GetValaccountsFromStaker(sdk.Context, string) []*stakersTypes.Valaccount
+}
+
+type FundersKeeper interface {
+	GetParams(ctx sdk.Context) fundersTypes.Params
+	GetFunder(ctx sdk.Context, address string) (funder fundersTypes.Funder, found bool)
+	GetFundingsOfFunder(ctx sdk.Context, address string) (fundings []fundersTypes.Funding)
+	GetTotalActiveFunding(ctx sdk.Context, poolId uint64) (total uint64)
+	GetPaginatedFundersQuery(ctx sdk.Context, pagination *query.PageRequest, search string) ([]fundersTypes.Funder, *query.PageResponse, error)
+	GetPaginatedFundingQuery(
+		ctx sdk.Context,
+		pagination *query.PageRequest,
+		funderAddress *string,
+		poolId *uint64,
+		fundingStatus FundingStatus,
+	) ([]fundersTypes.Funding, *query.PageResponse, error)
 }

@@ -26,9 +26,6 @@ TEST CASES - msg_server_undelegate.go
 * JoinA, Slash, JoinB, PayoutReward
 * Slash twice
 * Start unbonding, slash twice, payout, await undelegation
-
-TODO(@max): joinA slash joinB slash -> remaining delegation
-
 */
 
 var _ = Describe("msg_server_undelegate.go", Ordered, func() {
@@ -52,21 +49,29 @@ var _ = Describe("msg_server_undelegate.go", Ordered, func() {
 			Amount:  bobSelfDelegation,
 		})
 
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name: "DisabledPool",
-			Protocol: &pooltypes.Protocol{
-				Version:     "0.0.0",
-				Binaries:    "{}",
-				LastUpgrade: uint64(s.Ctx().BlockTime().Unix()),
-			},
-			Disabled:    true,
-			UpgradePlan: &pooltypes.UpgradePlan{},
-		})
+		gov := s.App().GovKeeper.GetGovernanceAccount(s.Ctx()).GetAddress().String()
+		msg := &pooltypes.MsgCreatePool{
+			Authority:            gov,
+			Name:                 "PoolTest",
+			Runtime:              "@kyve/test",
+			Logo:                 "ar://Tewyv2P5VEG8EJ6AUQORdqNTectY9hlOrWPK8wwo-aU",
+			Config:               "ar://DgdB-2hLrxjhyEEbCML__dgZN5_uS7T6Z5XDkaFh3P0",
+			StartKey:             "0",
+			UploadInterval:       60,
+			InflationShareWeight: 10_000,
+			MinDelegation:        100 * i.KYVE,
+			MaxBundleSize:        100,
+			Version:              "0.0.0",
+			Binaries:             "{}",
+			StorageProviderId:    2,
+			CompressionId:        1,
+		}
+		s.RunTxPoolSuccess(msg)
 
 		s.RunTxStakersSuccess(&stakerstypes.MsgJoinPool{
 			Creator:    i.BOB,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_0,
+			Valaddress: i.VALADDRESS_0_A,
 			Amount:     0,
 		})
 
@@ -493,6 +498,11 @@ var _ = Describe("msg_server_undelegate.go", Ordered, func() {
 		// ASSERT
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(uint64(666_666_666)))
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[1])).To(Equal(uint64(2_666_666_666)))
+
+		// must be the same as before
+		Expect(s.App().DelegationKeeper.GetDelegationAmount(s.Ctx(), i.ALICE)).To(Equal((50 + 25) * i.KYVE))
+		Expect(s.App().DelegationKeeper.GetDelegationAmountOfDelegator(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(5 * i.KYVE))
+		Expect(s.App().DelegationKeeper.GetDelegationAmountOfDelegator(s.Ctx(), i.ALICE, i.DUMMY[1])).To(Equal(20 * i.KYVE))
 	})
 
 	It("Slash twice", func() {

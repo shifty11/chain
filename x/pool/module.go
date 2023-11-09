@@ -169,6 +169,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Val
 func init() {
 	appmodule.Register(&modulev1.Module{},
 		appmodule.Provide(ProvideModule),
+		appmodule.Invoke(InvokeSetStakersKeeper, InvokeSetFundersKeeper),
 	)
 }
 
@@ -214,4 +215,32 @@ func ProvideModule(in PoolInputs) PoolOutputs {
 	m := NewAppModule(in.Cdc, *poolKeeper, in.AccountKeeper, in.BankKeeper, in.UpgradeKeeper)
 
 	return PoolOutputs{PoolKeeper: poolKeeper, Module: m}
+}
+
+func InvokeSetStakersKeeper(
+	keeper *keeper.Keeper,
+	stakersKeeper types.StakersKeeper,
+) error {
+	if keeper == nil {
+		return fmt.Errorf("keeper is nil")
+	}
+	if stakersKeeper == nil {
+		return fmt.Errorf("stakers keeper is nil")
+	}
+	keeper.SetStakersKeeper(stakersKeeper)
+	return nil
+}
+
+func InvokeSetFundersKeeper(
+	keeper *keeper.Keeper,
+	fundersKeeper types.FundersKeeper,
+) error {
+	if keeper == nil {
+		return fmt.Errorf("keeper is nil")
+	}
+	if fundersKeeper == nil {
+		return fmt.Errorf("funders keeper is nil")
+	}
+	keeper.SetFundersKeeper(fundersKeeper)
+	return nil
 }

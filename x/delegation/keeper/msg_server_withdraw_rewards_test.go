@@ -1,8 +1,10 @@
 package keeper_test
 
 import (
+	funderstypes "github.com/KYVENetwork/chain/x/funders/types"
 	pooltypes "github.com/KYVENetwork/chain/x/pool/types"
 	stakerstypes "github.com/KYVENetwork/chain/x/stakers/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -17,10 +19,8 @@ TEST CASES - msg_server_withdraw_rewards.go
 * Payout rewards which cause rounding issues and withdraw
 * Withdraw from a non-existing delegator
 * Test invalid payouts to delegators
-
-* TODO(@max): Test withdrawal of rewards which are zero
-* TODO(@max): Test withdrawal of rewards with multiple slashes
-
+* Withdraw rewards which are zero
+* Withdraw rewards with multiple slashes
 */
 
 var _ = Describe("msg_server_withdraw_rewards.go", Ordered, func() {
@@ -83,7 +83,7 @@ var _ = Describe("msg_server_withdraw_rewards.go", Ordered, func() {
 		Expect(s.App().DelegationKeeper.GetDelegationAmount(s.Ctx(), i.ALICE)).To(Equal(aliceSelfDelegation + 30*i.KYVE))
 
 		delegationModuleBalanceBefore := s.GetBalanceFromModule(types.ModuleName)
-		poolModuleBalanceBefore := s.GetBalanceFromModule(pooltypes.ModuleName)
+		fundersModuleBalanceBefore := s.GetBalanceFromModule(funderstypes.ModuleName)
 		s.PerformValidityChecks()
 
 		// ACT
@@ -95,10 +95,10 @@ var _ = Describe("msg_server_withdraw_rewards.go", Ordered, func() {
 
 		// ASSERT
 		delegationModuleBalanceAfter := s.GetBalanceFromModule(types.ModuleName)
-		poolModuleBalanceAfter := s.GetBalanceFromModule(pooltypes.ModuleName)
+		fundersModuleBalanceAfter := s.GetBalanceFromModule(funderstypes.ModuleName)
 
 		Expect(delegationModuleBalanceAfter).To(Equal(delegationModuleBalanceBefore + 20*i.KYVE))
-		Expect(poolModuleBalanceAfter).To(Equal(poolModuleBalanceBefore - 20*i.KYVE))
+		Expect(fundersModuleBalanceAfter).To(Equal(fundersModuleBalanceBefore - 20*i.KYVE))
 
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(uint64(6666666666)))
 		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[1])).To(Equal(uint64(6666666666)))
@@ -155,10 +155,11 @@ var _ = Describe("msg_server_withdraw_rewards.go", Ordered, func() {
 		// ARRANGE
 
 		// fund pool module
-		s.RunTxPoolSuccess(&pooltypes.MsgFundPool{
-			Creator: i.ALICE,
-			Id:      0,
-			Amount:  100 * i.KYVE,
+		s.RunTxFundersSuccess(&funderstypes.MsgFundPool{
+			Creator:         i.ALICE,
+			PoolId:          0,
+			Amount:          100 * i.KYVE,
+			AmountPerBundle: 1 * i.KYVE,
 		})
 
 		// ACT
@@ -170,5 +171,62 @@ var _ = Describe("msg_server_withdraw_rewards.go", Ordered, func() {
 		// ASSERT
 		Expect(err1).To(HaveOccurred())
 		Expect(err2).To(HaveOccurred())
+	})
+
+	It("Withdraw rewards which are zero", func() {
+		// ARRANGE
+		s.RunTxDelegatorSuccess(&types.MsgDelegate{
+			Creator: i.DUMMY[0],
+			Staker:  i.ALICE,
+			Amount:  1,
+		})
+		startBalance := s.GetBalanceFromAddress(i.DUMMY[0])
+
+		// ACT
+		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(uint64(0)))
+
+		s.RunTxDelegatorSuccess(&types.MsgWithdrawRewards{
+			Creator: i.DUMMY[0],
+			Staker:  i.ALICE,
+		})
+
+		// ASSERT
+		Expect(s.GetBalanceFromAddress(i.DUMMY[0])).To(Equal(startBalance))
+		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(uint64(0)))
+	})
+
+	It("Withdraw rewards with multiple slashes", func() {
+		// ARRANGE
+		s.RunTxDelegatorSuccess(&types.MsgDelegate{
+			Creator: i.DUMMY[0],
+			Staker:  i.ALICE,
+			Amount:  10 * i.KYVE,
+		})
+		startBalance := s.GetBalanceFromAddress(i.DUMMY[0])
+
+		// ACT
+		params := s.App().DelegationKeeper.GetParams(s.Ctx())
+		params.UploadSlash = sdk.MustNewDecFromStr("0.5")
+		s.App().DelegationKeeper.SetParams(s.Ctx(), params)
+
+		// Slash 50%
+		s.App().DelegationKeeper.SlashDelegators(s.Ctx(), 0, i.ALICE, types.SLASH_TYPE_UPLOAD)
+		PayoutRewards(s, i.ALICE, 5*i.KYVE)
+
+		// Slash 50% again
+		s.App().DelegationKeeper.SlashDelegators(s.Ctx(), 0, i.ALICE, types.SLASH_TYPE_UPLOAD)
+		PayoutRewards(s, i.ALICE, 5*i.KYVE)
+
+		s.PerformValidityChecks()
+
+		// ASSERT
+		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(10 * i.KYVE))
+
+		s.RunTxDelegatorSuccess(&types.MsgWithdrawRewards{
+			Creator: i.DUMMY[0],
+			Staker:  i.ALICE,
+		})
+		Expect(s.App().DelegationKeeper.GetOutstandingRewards(s.Ctx(), i.ALICE, i.DUMMY[0])).To(Equal(uint64(0)))
+		Expect(s.GetBalanceFromAddress(i.DUMMY[0])).To(Equal(startBalance + 10*i.KYVE))
 	})
 })

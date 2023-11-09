@@ -3,6 +3,7 @@ package app
 import (
 	_ "embed"
 	v1p4 "github.com/KYVENetwork/chain/app/upgrades/v1_4"
+	fundersKeeper "github.com/KYVENetwork/chain/x/funders/keeper"
 	"io"
 	"os"
 	"path/filepath"
@@ -126,6 +127,7 @@ type App struct {
 	QueryKeeper      *queryKeeper.Keeper
 	TeamKeeper       *teamKeeper.Keeper
 	StakersKeeper    *stakersKeeper.Keeper
+	FundersKeeper    *fundersKeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// Scoped IBC
@@ -221,6 +223,7 @@ func NewKyveApp(
 		&app.QueryKeeper,
 		&app.TeamKeeper,
 		&app.StakersKeeper,
+		&app.FundersKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
@@ -257,6 +260,8 @@ func NewKyveApp(
 	// The problem is that appBuilder.Modules
 	// - app.ModuleManager.Modules["delegation"].keeper.stakersKeeper is nil
 	// - app.ModuleManager.Modules["query"].keeper.bundlesKeeper is nil
+	// - app.ModuleManager.Modules["pool"].keeper.stakersKeeper is nil
+	// - app.ModuleManager.Modules["pool"].keeper.fundersKeeper is nil
 	// This values should be set by the depinject 'Invoke' method. The invoke is called but the values are not set for the ModuleManager.
 	// However the keepers on the app itself are correctly set. This is most likely some pointer/reference issue.
 

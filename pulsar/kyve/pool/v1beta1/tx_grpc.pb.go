@@ -19,8 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Msg_FundPool_FullMethodName               = "/kyve.pool.v1beta1.Msg/FundPool"
-	Msg_DefundPool_FullMethodName             = "/kyve.pool.v1beta1.Msg/DefundPool"
 	Msg_CreatePool_FullMethodName             = "/kyve.pool.v1beta1.Msg/CreatePool"
 	Msg_UpdatePool_FullMethodName             = "/kyve.pool.v1beta1.Msg/UpdatePool"
 	Msg_DisablePool_FullMethodName            = "/kyve.pool.v1beta1.Msg/DisablePool"
@@ -34,10 +32,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MsgClient interface {
-	// FundPool ...
-	FundPool(ctx context.Context, in *MsgFundPool, opts ...grpc.CallOption) (*MsgFundPoolResponse, error)
-	// DefundPool ...
-	DefundPool(ctx context.Context, in *MsgDefundPool, opts ...grpc.CallOption) (*MsgDefundPoolResponse, error)
 	// CreatePool defines a governance operation for creating a new pool.
 	// The authority is hard-coded to the x/gov module account.
 	CreatePool(ctx context.Context, in *MsgCreatePool, opts ...grpc.CallOption) (*MsgCreatePoolResponse, error)
@@ -67,24 +61,6 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
-}
-
-func (c *msgClient) FundPool(ctx context.Context, in *MsgFundPool, opts ...grpc.CallOption) (*MsgFundPoolResponse, error) {
-	out := new(MsgFundPoolResponse)
-	err := c.cc.Invoke(ctx, Msg_FundPool_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) DefundPool(ctx context.Context, in *MsgDefundPool, opts ...grpc.CallOption) (*MsgDefundPoolResponse, error) {
-	out := new(MsgDefundPoolResponse)
-	err := c.cc.Invoke(ctx, Msg_DefundPool_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *msgClient) CreatePool(ctx context.Context, in *MsgCreatePool, opts ...grpc.CallOption) (*MsgCreatePoolResponse, error) {
@@ -154,10 +130,6 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
 type MsgServer interface {
-	// FundPool ...
-	FundPool(context.Context, *MsgFundPool) (*MsgFundPoolResponse, error)
-	// DefundPool ...
-	DefundPool(context.Context, *MsgDefundPool) (*MsgDefundPoolResponse, error)
 	// CreatePool defines a governance operation for creating a new pool.
 	// The authority is hard-coded to the x/gov module account.
 	CreatePool(context.Context, *MsgCreatePool) (*MsgCreatePoolResponse, error)
@@ -186,12 +158,6 @@ type MsgServer interface {
 type UnimplementedMsgServer struct {
 }
 
-func (UnimplementedMsgServer) FundPool(context.Context, *MsgFundPool) (*MsgFundPoolResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FundPool not implemented")
-}
-func (UnimplementedMsgServer) DefundPool(context.Context, *MsgDefundPool) (*MsgDefundPoolResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DefundPool not implemented")
-}
 func (UnimplementedMsgServer) CreatePool(context.Context, *MsgCreatePool) (*MsgCreatePoolResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePool not implemented")
 }
@@ -224,42 +190,6 @@ type UnsafeMsgServer interface {
 
 func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 	s.RegisterService(&Msg_ServiceDesc, srv)
-}
-
-func _Msg_FundPool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgFundPool)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).FundPool(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_FundPool_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).FundPool(ctx, req.(*MsgFundPool))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_DefundPool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgDefundPool)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).DefundPool(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_DefundPool_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).DefundPool(ctx, req.(*MsgDefundPool))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_CreatePool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -395,14 +325,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "kyve.pool.v1beta1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "FundPool",
-			Handler:    _Msg_FundPool_Handler,
-		},
-		{
-			MethodName: "DefundPool",
-			Handler:    _Msg_DefundPool_Handler,
-		},
 		{
 			MethodName: "CreatePool",
 			Handler:    _Msg_CreatePool_Handler,

@@ -1,6 +1,8 @@
 package app
 
 import (
+	fundersmodule "github.com/KYVENetwork/chain/pulsar/kyve/funders/module/v1"
+	funderstypes "github.com/KYVENetwork/chain/x/funders/types"
 	"time"
 
 	runtimev1alpha1 "cosmossdk.io/api/cosmos/app/runtime/v1alpha1"
@@ -134,6 +136,7 @@ var (
 		globaltypes.ModuleName,
 		teamtypes.ModuleName,
 		stakerstypes.ModuleName,
+		funderstypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -176,6 +179,7 @@ var (
 		querytypes.ModuleName,
 		globaltypes.ModuleName,
 		stakerstypes.ModuleName,
+		funderstypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -210,6 +214,7 @@ var (
 		globaltypes.ModuleName,
 		teamtypes.ModuleName,
 		stakerstypes.ModuleName,
+		funderstypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -231,6 +236,7 @@ var (
 		{Account: globaltypes.ModuleName, Permissions: []string{authtypes.Burner}},
 		{Account: teamtypes.ModuleName},
 		{Account: stakerstypes.ModuleName},
+		{Account: funderstypes.ModuleName},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 
@@ -385,6 +391,10 @@ var (
 			{
 				Name:   stakerstypes.ModuleName,
 				Config: appconfig.WrapAny(&stakersmodule.Module{}),
+			},
+			{
+				Name:   funderstypes.ModuleName,
+				Config: appconfig.WrapAny(&fundersmodule.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

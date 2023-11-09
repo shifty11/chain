@@ -28,14 +28,22 @@ var _ = Describe("grpc_account_redelegation.go", Ordered, func() {
 	BeforeEach(func() {
 		s = i.NewCleanChain()
 
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name:           "T",
+		// create 2 pools
+		gov := s.App().GovKeeper.GetGovernanceAccount(s.Ctx()).GetAddress().String()
+		msg := &pooltypes.MsgCreatePool{
+			Authority:      gov,
 			MinDelegation:  200 * i.KYVE,
 			UploadInterval: 60,
 			MaxBundleSize:  100,
-			Protocol:       &pooltypes.Protocol{},
-			UpgradePlan:    &pooltypes.UpgradePlan{},
-		})
+			Binaries:       "{}",
+		}
+		s.RunTxPoolSuccess(msg)
+		s.RunTxPoolSuccess(msg)
+
+		// disable second pool
+		pool, _ := s.App().PoolKeeper.GetPool(s.Ctx(), 1)
+		pool.Disabled = true
+		s.App().PoolKeeper.SetPool(s.Ctx(), pool)
 
 		s.RunTxStakersSuccess(&stakertypes.MsgCreateStaker{
 			Creator: i.STAKER_0,
@@ -47,21 +55,10 @@ var _ = Describe("grpc_account_redelegation.go", Ordered, func() {
 			Amount:  100 * i.KYVE,
 		})
 
-		s.App().PoolKeeper.AppendPool(s.Ctx(), pooltypes.Pool{
-			Name: "DisabledPool",
-			Protocol: &pooltypes.Protocol{
-				Version:     "0.0.0",
-				Binaries:    "{}",
-				LastUpgrade: uint64(s.Ctx().BlockTime().Unix()),
-			},
-			Disabled:    true,
-			UpgradePlan: &pooltypes.UpgradePlan{},
-		})
-
 		s.RunTxStakersSuccess(&stakertypes.MsgJoinPool{
 			Creator:    i.STAKER_1,
 			PoolId:     0,
-			Valaddress: i.VALADDRESS_1,
+			Valaddress: i.VALADDRESS_1_A,
 			Amount:     0,
 		})
 

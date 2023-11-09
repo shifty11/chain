@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-
 	"github.com/KYVENetwork/chain/util"
 
 	"github.com/cometbft/cometbft/libs/log"
@@ -30,6 +29,7 @@ type (
 		distrkeeper   util.DistributionKeeper
 		mintKeeper    util.MintKeeper
 		upgradeKeeper util.UpgradeKeeper
+		fundersKeeper types.FundersKeeper
 	}
 )
 
@@ -82,6 +82,10 @@ func (k Keeper) EnsurePoolAccount(ctx sdk.Context, id uint64) {
 
 func (k *Keeper) SetStakersKeeper(stakersKeeper types.StakersKeeper) {
 	k.stakersKeeper = stakersKeeper
+}
+
+func (k *Keeper) SetFundersKeeper(fundersKeeper types.FundersKeeper) {
+	k.fundersKeeper = fundersKeeper
 }
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {

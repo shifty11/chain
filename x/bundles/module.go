@@ -134,6 +134,9 @@ func (am AppModule) IsOnePerModuleType() {}
 // IsAppModule implements the appmodule.AppModule interface.
 func (am AppModule) IsAppModule() {}
 
+// Deprecated: use RegisterServices
+func (AppModule) QuerierRoute() string { return types.RouterKey }
+
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
@@ -199,6 +202,7 @@ type BundlesInputs struct {
 	UpgradeKeeper      util.UpgradeKeeper
 	MintKeeper         util.MintKeeper
 	TeamKeeper         types.TeamKeeper
+	FundersKeeper      types.FundersKeeper
 }
 
 type BundlesOutpus struct {
@@ -225,6 +229,7 @@ func ProvideModule(in BundlesInputs) BundlesOutpus {
 		in.PoolKeeper,
 		in.StakersKeeper,
 		in.DelegationKeeper,
+		in.FundersKeeper,
 	)
 	m := NewAppModule(in.Cdc, *bundlesKeeper, in.BankKeeper, in.MintKeeper, in.UpgradeKeeper, in.PoolKeeper, in.TeamKeeper)
 
